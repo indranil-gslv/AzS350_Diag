@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Az S 350 U - Diagnostic Tool</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; font-family: sans-serif; user-select: none; }
+  body { 
+    background: radial-gradient(circle at center, #1a1a1a 0%, #000 100%); 
+    color: #fff; 
+    padding: 10px; 
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    align-items: center;
+  }
+  .brand-header {
+    text-align: center;
+    margin-bottom: 15px;
+  }
+  .brand-header h1 {
+    color: #00e5ff;
+    font-size: 32px;
+    font-weight: 900;
+    letter-spacing: 2px;
+    text-shadow: 0 0 15px rgba(0, 229, 255, 0.4);
+  }
+  .brand-header p {
+    color: #fff;
+    font-size: 16px;
+    font-weight: bold;
+    margin-top: 5px;
+    letter-spacing: 1px;
+  }
+
+  .rack-wrapper {
+    width: 100%;
+    max-width: 420px;
+    margin-bottom: 15px;
+    border: 2px solid #00ffcc;
+    border-radius: 10px;
+    padding: 6px;
+    background: #0a0a0a;
+    box-shadow: 0 0 15px rgba(0, 255, 204, 0.3);
+  }
+  .rack-container {
+    width: 100%;
+    background-color: #d4d4d4;
+    border: 2px solid #a0a0a0;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.8);
+    padding: 2px;
+  }
+  .slot-bar, .modules-frame {
+    display: grid;
+    grid-template-columns: repeat(17, minmax(0, 1fr));
+  }
+  .slot-bar {
+    background-color: #e2dc21;
+    color: #000;
+    font-size: 5px;
+    font-weight: bold;
+    padding: 2px 0;
+    border-bottom: 1px solid #a0a0a0;
+    text-align: center;
+  }
+  .modules-frame {
+    background-color: #b0b0b0;
+    border-bottom: 2px solid #e2dc21;
+    min-height: 140px;
+  }
+  .module {
+    border-right: 1px solid #777;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 2px 0.5px;
+    box-sizing: border-box;
+    width: 100%;
+  }
+  .module-metallic { background: linear-gradient(135deg, #e6e6e6 0%, #cccccc 50%, #e6e6e6 100%); }
+  .module-gray { background: linear-gradient(135deg, #d8d8d8 0%, #bfbfbf 100%); }
+  .module-blank { background: #b5b5b5; }
+  .label-vertical {
+    writing-mode: vertical-rl;
+    text-orientation: mixed;
+    font-size: 5px;
+    font-weight: 800;
+    letter-spacing: 0.3px;
+    color: #111;
+  }
+  .screw-head {
+    width: 3px;
+    height: 3px;
+    background: radial-gradient(circle, #888 30%, #222 90%);
+    border-radius: 50%;
+  }
+  .m-steu { justify-content: flex-start; padding-top: 1px; }
+  .steu-led-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5px;
+    margin: 1px 0;
+    align-items: flex-start;
+    font-size: 3.5px;
+    color: #333;
+    width: 100%;
+    padding-left: 0.5px;
+  }
+  .steu-row { display: flex; align-items: center; gap: 1px; }
+  .m-vau { background: linear-gradient(135deg, #d2d2c5 0%, #b8b8aa 100%); justify-content: flex-start; padding: 2px 0.5px; }
+  .vau-led-group { display: flex; flex-direction: column; gap: 1px; width: 100%; margin-top: 2px; }
+  .vau-led-row { display: flex; align-items: center; gap: 0.5px; font-size: 3.5px; font-weight: bold; color: #111; }
+  .led-dot { width: 2.5px; height: 2.5px; border-radius: 50%; border: 0.3px solid #222; }
+  .led-yellow { background: #ffcc00; }
+  .led-red { background: #ff2222; }
+  .vau-big-red-led { width: 4.5px; height: 4.5px; background: #ff0000; border-radius: 50%; margin-top: auto; margin-bottom: 1px; }
+  .warning-triangle { width: 0; height: 0; border-left: 2px solid transparent; border-right: 2px solid transparent; border-bottom: 4px solid #ffaa00; position: relative; }
+  .m-vesba { justify-content: flex-start; padding: 2px 0.5px; }
+  .vesba-fuse-cap { width: 7px; height: 7px; background: #333; border-radius: 50%; border: 0.5px solid #666; margin: 1px 0; }
+  .pot-knob { width: 3px; height: 3px; background: #ffcc00; border-radius: 50%; }
+  .black-socket { width: 2px; height: 2px; background: #000; border-radius: 50%; }
+  .socket-row { display: flex; align-items: center; justify-content: space-between; width: 100%; padding: 0 0.5px; margin: 0.5px 0; }
+  .m-svk { justify-content: space-between; padding: 4px 1px; position: relative; }
+  .svk-warning-box { width: 5px; height: 5px; background: #ffaa00; font-size: 3px; display: flex; justify-content: center; align-items: center; }
+  .svk-high-voltage { width: 6px; height: 6px; border-left: 3px solid transparent; border-right: 3px solid transparent; border-bottom: 5px solid #ffaa00; }
+  .svk-led-column { display: flex; flex-direction: column; gap: 1.5px; align-items: flex-end; }
+  .svk-led-item { display: flex; align-items: center; gap: 0.5px; font-size: 3.5px; font-weight: bold; color: #111; }
+  .svk-switch-knob { width: 6px; height: 6px; background: #333; border-radius: 50%; }
+  .svk-ejector { width: 6px; height: 6px; background: #a8a8a8; position: absolute; bottom: 10px; left: 1px; }
+  .svk-brand-text { writing-mode: vertical-rl; font-size: 5px; font-weight: 900; color: #222; position: absolute; bottom: 14px; left: 10px; }
+  .siemens-text { font-size: 3px; font-weight: bold; color: #006666; position: absolute; bottom: 8px; left: 10px; }
+
+  .card { 
+    width: 100%;
+    max-width: 420px; 
+    background: #111; 
+    padding: 18px; 
+    border-radius: 12px; 
+    border: 1px solid #333; 
+    box-shadow: 0 8px 25px rgba(0, 229, 255, 0.15);
+  }
+  h2 { 
+    text-align: center; 
+    color: #00e5ff; 
+    font-size: 18px; 
+    margin-bottom: 10px; 
+    letter-spacing: 1px;
+  }
+  .led0-banner {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: #1a1a1a;
+    padding: 10px 14px;
+    border-radius: 8px;
+    margin-bottom: 12px;
+    border: 1px dashed #ffcc00;
+  }
+  .led-dot-flash {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background-color: #ffcc00;
+    border: 2px solid #ff9900;
+    box-shadow: 0 0 10px #ffcc00, inset 0 1px 2px rgba(255,255,255,0.6);
+    animation: flashAnim 0.8s infinite alternate;
+  }
+  @keyframes flashAnim {
+    0% { opacity: 0.3; transform: scale(0.9); }
+    100% { opacity: 1; transform: scale(1.1); }
+  }
+  .row { 
+    display: flex; 
+    justify-content: space-between; 
+    align-items: center; 
+    background: #1e1e1e; 
+    padding: 10px 14px; 
+    margin-bottom: 8px; 
+    border-radius: 8px; 
+    border: 1px solid #333; 
+    cursor: pointer;
+  }
+  .row span { font-weight: bold; font-size: 14px; }
+  
+  .custom-led-checkbox {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background-color: #333;
+    border: 2px solid #555;
+    display: inline-block;
+    transition: all 0.2s ease;
+    box-shadow: inset 0 2px 4px rgba(0,0,0,0.6);
+  }
+  .chk:checked + .custom-led-checkbox {
+    background-color: #ffcc00;
+    border-color: #ff9900;
+    box-shadow: 0 0 10px #ffcc00, inset 0 1px 2px rgba(255,255,255,0.6);
+  }
+  .chk { display: none; }
+
+  button { 
+    width: 100%; 
+    background: linear-gradient(135deg, #00e5ff, #008ba3); 
+    color: #000; 
+    border: none; 
+    padding: 14px; 
+    font-size: 15px; 
+    font-weight: bold; 
+    border-radius: 8px; 
+    cursor: pointer; 
+    margin-top: 12px;
+    box-shadow: 0 4px 15px rgba(0, 229, 255, 0.3);
+  }
+  .result { display: none; }
+  .res-item {
+    background: #1a1a1a;
+    padding: 10px;
+    border-radius: 6px;
+    margin-bottom: 10px;
+    border-left: 4px solid #00e5ff;
+    color: #fff;
+  }
+  .res-item strong { color: #00e5ff; display: block; margin-bottom: 3px; font-size: 12px; }
+
+  .invalid-mode h2 { color: #ff3b30 !important; }
+  .invalid-mode .res-item { border-left-color: #ff3b30 !important; color: #ff3b30 !important; }
+  .invalid-mode .res-item strong { color: #ff3b30 !important; }
+  .invalid-mode .res-item span { color: #ff3b30 !important; }
+
+  .back-btn { background: linear-gradient(135deg, #555, #333); color: #fff; }
+
+  /* Engraved / Debossed Khodai Effect for Footer */
+  footer { 
+    text-align: center; 
+    font-size: 11px; 
+    color: #4a4a4a; 
+    margin-top: 18px; 
+    line-height: 1.5;
+    letter-spacing: 0.5px;
+    text-shadow: 0 1px 1px rgba(255, 255, 255, 0.08);
+  }
+</style>
+</head>
+<body oncontextmenu="return false;">
+
+  <div class="brand-header">
+    <h1>SIEMENS</h1>
+    <p>Az S 350 U</p>
+  </div>
+
+  <div class="rack-wrapper">
+    <div class="rack-container">
+      <div class="slot-bar">
+        <span>3</span><span>11</span><span>19</span><span>27</span><span>33</span><span>41</span><span>49</span><span>57</span><span>63</span><span>71</span><span>79</span><span>91</span><span>103</span><span>115</span><span>127</span><span>139</span><span>145</span>
+      </div>
+      <div class="modules-frame">
+        <div class="module module-gray"><div class="screw-head"></div><span class="label-vertical">SIRIUS2</span><div class="screw-head"></div></div>
+        <div class="module module-gray"><div class="screw-head"></div><span class="label-vertical">BLEA-1</span><div class="screw-head"></div></div>
+        <div class="module module-gray"><div class="screw-head"></div><span class="label-vertical">BLEA-3</span><div class="screw-head"></div></div>
+        <div class="module module-gray m-steu">
+          <div class="screw-head"></div>
+          <div class="warning-triangle"></div>
+          <div class="steu-led-list">
+            <div class="steu-row"><div class="led-dot led-yellow"></div><span>0</span></div>
+            <div class="steu-row"><div class="led-dot led-yellow"></div><span>1</span></div>
+            <div class="steu-row"><div class="led-dot"></div><span>2</span></div>
+            <div class="steu-row"><div class="led-dot"></div><span>3</span></div>
+            <div class="steu-row"><div class="led-dot"></div><span>4</span></div>
+            <div class="steu-row"><div class="led-dot"></div><span>5</span></div>
+            <div class="steu-row"><div class="led-dot"></div><span>6</span></div>
+            <div class="steu-row"><div class="led-dot"></div><span>7</span></div>
+            <div class="steu-row"><div class="led-dot"></div><span>8</span></div>
+            <div class="steu-row"><div class="led-dot"></div><span>9</span></div>
+            <div class="steu-row"><div class="led-dot"></div><span>10</span></div>
+            <div class="steu-row"><div class="led-dot"></div><span>11</span></div>
+          </div>
+          <span class="label-vertical" style="margin-top:auto; font-size:4px;">STEU</span>
+          <div class="screw-head" style="margin-top:1px;"></div>
+        </div>
+        <div class="module m-vau">
+          <div class="screw-head"></div>
+          <div class="vau-led-group">
+            <div class="vau-led-row"><div class="led-dot led-yellow"></div><span>VGL</span></div>
+            <div class="vau-led-row"><div class="led-dot led-red"></div><span>SPW</span></div>
+            <div class="vau-led-row"><div class="led-dot led-red"></div><span>PAB</span></div>
+            <div class="vau-led-row"><div class="led-dot led-red"></div><span>ANL</span></div>
+          </div>
+          <div class="vau-big-red-led"></div>
+          <span class="label-vertical" style="color:#d00; font-size:5px;">VAU</span>
+          <div class="warning-triangle"></div>
+          <div class="screw-head" style="margin-top:1px;"></div>
+        </div>
+        <div class="module module-blank"><div class="screw-head"></div><span class="label-vertical" style="color:#444; font-size:4px;">BLANK</span><div class="screw-head"></div></div>
+        <div class="module m-vau">
+          <div class="screw-head"></div>
+          <div class="vau-led-group">
+            <div class="vau-led-row"><div class="led-dot led-yellow"></div><span>VGL</span></div>
+            <div class="vau-led-row"><div class="led-dot led-red"></div><span>SPW</span></div>
+            <div class="vau-led-row"><div class="led-dot led-red"></div><span>PAB</span></div>
+            <div class="vau-led-row"><div class="led-dot led-red"></div><span>ANL</span></div>
+          </div>
+          <div class="vau-big-red-led"></div>
+          <span class="label-vertical" style="color:#d00; font-size:5px;">VAU</span>
+          <div class="warning-triangle"></div>
+          <div class="screw-head" style="margin-top:1px;"></div>
+        </div>
+        <div class="module module-gray m-steu">
+          <div class="screw-head"></div>
+          <div class="warning-triangle"></div>
+          <div class="steu-led-list">
+            <div class="steu-row"><div class="led-dot"></div><span>0</span></div>
+            <div class="steu-row"><div class="led-dot"></div><span>1</span></div>
+            <div class="steu-row"><div class="led-dot led-yellow"></div><span>2</span></div>
+            <div class="steu-row"><div class="led-dot"></div><span>3</span></div>
+            <div class="steu-row"><div class="led-dot"></div><span>4</span></div>
+            <div class="steu-row"><div class="led-dot"></div><span>5</span></div>
+            <div class="steu-row"><div class="led-dot"></div><span>6</span></div>
+            <div class="steu-row"><div class="led-dot"></div><span>7</span></div>
+            <div class="steu-row"><div class="led-dot"></div><span>8</span></div>
+            <div class="steu-row"><div class="led-dot"></div><span>9</span></div>
+            <div class="steu-row"><div class="led-dot"></div><span>10</span></div>
+            <div class="steu-row"><div class="led-dot"></div><span>11</span></div>
+          </div>
+          <span class="label-vertical" style="margin-top:auto; font-size:4px;">STEU</span>
+          <div class="screw-head" style="margin-top:1px;"></div>
+        </div>
+        <div class="module module-gray"><div class="screw-head"></div><span class="label-vertical">BLEA-4</span><div class="screw-head"></div></div>
+        <div class="module module-gray"><div class="screw-head"></div><span class="label-vertical">BLEA-2</span><div class="screw-head"></div></div>
+        <div class="module module-metallic m-vesba"><div class="screw-head"></div><div class="vesba-fuse-cap"></div><div style="font-size:3px; font-weight:bold; text-align:right; width:100%;">Si1</div><div class="socket-row"><div class="led-dot led-yellow"></div><span style="font-size:3px;">.o--</span></div><div class="socket-row"><div class="pot-knob"></div><span style="font-size:3px;">⤹</span></div><div class="socket-row"><div style="display:flex; gap:0.5px;"><div class="black-socket"></div><div class="black-socket"></div></div><span style="font-size:3px;">F</span></div><div class="socket-row"><div style="display:flex; gap:0.5px;"><div class="black-socket"></div><div class="black-socket"></div></div><span style="font-size:3px;">0</span></div><div class="socket-row"><div style="display:flex; gap:0.5px;"><div class="black-socket"></div><div class="black-socket"></div></div><span style="font-size:3px;">F</span></div><div class="socket-row"><div class="led-dot led-yellow"></div><span style="font-size:3px;">.o--</span></div><span class="label-vertical" style="margin-top:auto; font-size:5px;">VESBA</span><div class="screw-head" style="margin-top:1px;"></div></div>
+        <div class="module module-metallic m-vesba"><div class="screw-head"></div><div class="vesba-fuse-cap"></div><div style="font-size:3px; font-weight:bold; text-align:right; width:100%;">Si1</div><div class="socket-row"><div class="led-dot led-yellow"></div><span style="font-size:3px;">.o--</span></div><div class="socket-row"><div class="pot-knob"></div><span style="font-size:3px;">⤹</span></div><div class="socket-row"><div style="display:flex; gap:0.5px;"><div class="black-socket"></div><div class="black-socket"></div></div><span style="font-size:3px;">F</span></div><div class="socket-row"><div style="display:flex; gap:0.5px;"><div class="black-socket"></div><div class="black-socket"></div></div><span style="font-size:3px;">0</span></div><div class="socket-row"><div style="display:flex; gap:0.5px;"><div class="black-socket"></div><div class="black-socket"></div></div><span style="font-size:3px;">F</span></div><div class="socket-row"><div class="led-dot led-yellow"></div><span style="font-size:3px;">.o--</span></div><span class="label-vertical" style="margin-top:auto; font-size:5px;">VESBA</span><div class="screw-head" style="margin-top:1px;"></div></div>
+        <div class="module module-metallic m-vesba"><div class="screw-head"></div><div class="vesba-fuse-cap"></div><div style="font-size:3px; font-weight:bold; text-align:right; width:100%;">Si1</div><div class="socket-row"><div class="led-dot led-yellow"></div><span style="font-size:3px;">.o--</span></div><div class="socket-row"><div class="pot-knob"></div><span style="font-size:3px;">⤹</span></div><div class="socket-row"><div style="display:flex; gap:0.5px;"><div class="black-socket"></div><div class="black-socket"></div></div><span style="font-size:3px;">F</span></div><div class="socket-row"><div style="display:flex; gap:0.5px;"><div class="black-socket"></div><div class="black-socket"></div></div><span style="font-size:3px;">0</span></div><div class="socket-row"><div style="display:flex; gap:0.5px;"><div class="black-socket"></div><div class="black-socket"></div></div><span style="font-size:3px;">F</span></div><div class="socket-row"><div class="led-dot led-yellow"></div><span style="font-size:3px;">.o--</span></div><span class="label-vertical" style="margin-top:auto; font-size:5px;">VESBA</span><div class="screw-head" style="margin-top:1px;"></div></div>
+        <div class="module module-metallic m-vesba"><div class="screw-head"></div><div class="vesba-fuse-cap"></div><div style="font-size:3px; font-weight:bold; text-align:right; width:100%;">Si1</div><div class="socket-row"><div class="led-dot led-yellow"></div><span style="font-size:3px;">.o--</span></div><div class="socket-row"><div class="pot-knob"></div><span style="font-size:3px;">⤹</span></div><div class="socket-row"><div style="display:flex; gap:0.5px;"><div class="black-socket"></div><div class="black-socket"></div></div><span style="font-size:3px;">F</span></div><div class="socket-row"><div style="display:flex; gap:0.5px;"><div class="black-socket"></div><div class="black-socket"></div></div><span style="font-size:3px;">0</span></div><div class="socket-row"><div style="display:flex; gap:0.5px;"><div class="black-socket"></div><div class="black-socket"></div></div><span style="font-size:3px;">F</span></div><div class="socket-row"><div class="led-dot led-yellow"></div><span style="font-size:3px;">.o--</span></div><span class="label-vertical" style="margin-top:auto; font-size:5px;">VESBA</span><div class="screw-head" style="margin-top:1px;"></div></div>
+        <div class="module module-metallic m-vesba"><div class="screw-head"></div><div class="vesba-fuse-cap"></div><div style="font-size:3px; font-weight:bold; text-align:right; width:100%;">Si1</div><div class="socket-row"><div class="led-dot led-yellow"></div><span style="font-size:3px;">.o--</span></div><div class="socket-row"><div class="pot-knob"></div><span style="font-size:3px;">⤹</span></div><div class="socket-row"><div style="display:flex; gap:0.5px;"><div class="black-socket"></div><div class="black-socket"></div></div><span style="font-size:3px;">F</span></div><div class="socket-row"><div style="display:flex; gap:0.5px;"><div class="black-socket"></div><div class="black-socket"></div></div><span style="font-size:3px;">0</span></div><div class="socket-row"><div style="display:flex; gap:0.5px;"><div class="black-socket"></div><div class="black-socket"></div></div><span style="font-size:3px;">F</span></div><div class="socket-row"><div class="led-dot led-yellow"></div><span style="font-size:3px;">.o--</span></div><span class="label-vertical" style="margin-top:auto; font-size:5px;">VESBA</span><div class="screw-head" style="margin-top:1px;"></div></div>
+        <div class="module module-blank"><div class="screw-head"></div><span class="label-vertical" style="color:#444; font-size:4px;">BLANK</span><div class="screw-head"></div></div>
+        <div class="module module-metallic m-svk">
+          <div class="svk-top-section"><div class="svk-warning-box">⚡</div><div class="screw-head"></div></div>
+          <div style="display:flex; justify-content:space-between; width:100%; margin-top:2px;"><div class="svk-high-voltage"></div><div class="svk-led-column"><div class="svk-led-item"><span>12V</span><div class="led-dot led-yellow"></div></div><div class="svk-led-item"><span>5V</span><div class="led-dot led-yellow"></div></div><div class="svk-led-item"><span>70V</span><div class="led-dot led-yellow"></div></div><div class="svk-led-item"><span>V~</span><div class="led-dot led-yellow"></div></div></div></div>
+          <div style="display:flex; justify-content:flex-end; width:100%;"><div class="svk-switch-knob"></div></div>
+          <div class="svk-ejector"></div><span class="svk-brand-text">SVK2150</span><span class="siemens-text">SIEMENS</span><div class="screw-head" style="position:absolute; bottom:4px; left:8px;"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div id="mainView">
+      <div class="led0-banner">
+        <span style="font-size: 14px; font-weight: bold; color: #ffcc00;">LED 0 (Flashing State)</span>
+        <div class="led-dot-flash"></div>
+      </div>
+      
+      <label class="row">
+        <span>LED 1</span>
+        <input type="checkbox" value="1" class="chk">
+        <span class="custom-led-checkbox"></span>
+      </label>
+      <label class="row">
+        <span>LED 2</span>
+        <input type="checkbox" value="2" class="chk">
+        <span class="custom-led-checkbox"></span>
+      </label>
+      <label class="row">
+        <span>LED 3</span>
+        <input type="checkbox" value="3" class="chk">
+        <span class="custom-led-checkbox"></span>
+      </label>
+      <label class="row">
+        <span>LED 4</span>
+        <input type="checkbox" value="4" class="chk">
+        <span class="custom-led-checkbox"></span>
+      </label>
+      <label class="row">
+        <span>LED 5</span>
+        <input type="checkbox" value="5" class="chk">
+        <span class="custom-led-checkbox"></span>
+      </label>
+      <label class="row">
+        <span>LED 6</span>
+        <input type="checkbox" value="6" class="chk">
+        <span class="custom-led-checkbox"></span>
+      </label>
+      <label class="row">
+        <span>LED 7</span>
+        <input type="checkbox" value="7" class="chk">
+        <span class="custom-led-checkbox"></span>
+      </label>
+
+      <button id="proceedBtn" type="button">Emergency Shutdown and Remedy</button>
+    </div>
+
+    <div id="resultView" class="result">
+      <h2 id="resHeader">Diagnostic Result</h2>
+      <hr style="border-color: #333; margin-bottom: 12px;">
+      <div class="res-item" id="boxCode"><strong>Fault Code Number:</strong><span id="outCode">--</span></div>
+      <div class="res-item" id="boxDesc"><strong>Description / Cause:</strong><span id="outDesc">--</span></div>
+      <div class="res-item" id="boxRem"><strong>Remedy:</strong><span id="outRem">--</span></div>
+      <button id="backBtn" class="back-btn" type="button">← Back to Panel</button>
+    </div>
+  </div>
+
+  <footer>
+    &copy; 2026 | Designed & Developed by Indranil Jana<br>
+    Sr. Engineer – Siemens GBS
+  </footer>
+
+<script>
+  (function() {
+    document.addEventListener('contextmenu', e => e.preventDefault());
+    document.addEventListener('keydown', e => {
+      if (e.key === 'F12' || (e.ctrlKey && e.shiftKey && ['I', 'J', 'C'].includes(e.key.toUpperCase())) || (e.ctrlKey && e.key.toUpperCase() === 'U')) {
+        e.preventDefault();
+        return false;
+      }
+    });
+
+    const _0xdb = [
+      {c:"02",l:[1],d:"Serious system fault; interrupt INT 3 triggered",r:"–"},
+      {c:"0C",l:[2,3],d:"During system start, reset buttons not synchronous",r:"Check buttons connection/contacts"},
+      {c:"0E",l:[1,2,3],d:"Stack overflow / Synchronisation fault",r:"–"},
+      {c:"10",l:[4],d:"SOPP run not terminated in due time",r:"–"},
+      {c:"1C",l:[2,3,4],d:"Time-out period exceeded (70 ms)",r:"–"},
+      {c:"20",l:[5],d:"Checksum error during memory test",r:"–"},
+      {c:"22",l:[1,5],d:"Error on external data bus, channel 1",r:"–"},
+      {c:"24",l:[2,5],d:"Error on external data bus, channel 2",r:"–"},
+      {c:"28",l:[3,5],d:"RAM faulty (read/write test failed)",r:"–"},
+      {c:"2A",l:[1,3,5],d:"RAM faulty (addressing test failed)",r:"–"},
+      {c:"2E",l:[1,2,3,5],d:"RAM faulty (illegal state)",r:"–"},
+      {c:"36",l:[1,2,4,5],d:"VAU boards cannot synchronise",r:"Press red button on both VAU boards; replace if fails"},
+      {c:"40",l:[6],d:"Block output control BLEA12 board faulty/missing",r:"Check slot assignment & DIP switch"},
+      {c:"42",l:[1,6],d:"Block output control channel 1 faulty/missing",r:"Check slot assignment & DIP switch"},
+      {c:"4A",l:[1,3,6],d:"Telegram with faulty interface address received",r:"Check address of SIRIUS board"},
+      {c:"4C",l:[2,3,6],d:"Serial interface or interface connection faulty",r:"Replace boards"},
+      {c:"4E",l:[1,2,3,6],d:"Interface initialisation test failed",r:"Replace board"},
+      {c:"50",l:[4,6],d:"Invalid DIP switch configuration",r:"Check switch settings"},
+      {c:"52",l:[1,4,6],d:"STEU board faulty",r:"Replace board"},
+      {c:"54",l:[2,4,6],d:"Block output control channel 2 faulty/missing",r:"Check slot assignment & DIP switch"},
+      {c:"56",l:[1,2,4,6],d:"Block output control second pair BLEA12 faulty",r:"Check slot assignment & DIP switch"},
+      {c:"58",l:[3,4,6],d:"Invalid DIP switch configuration for block info outputs",r:"Check DIP switch settings"},
+      {c:"5A",l:[1,3,4,6],d:"BLEA12 board in wrong slot",r:"Check slot assignment & DIP switch"},
+      {c:"5C",l:[2,3,4,6],d:"Invalid DIP switch configuration (Neighbouring head missing)",r:"Check configuration"},
+      {c:"5E",l:[1,2,3,4,6],d:"Block relay 4 asynchronous",r:"Check first pair of BLEA12 boards"},
+      {c:"60",l:[5,6],d:"Block relay 5 asynchronous",r:"Check first pair of BLEA12 boards"},
+      {c:"62",l:[1,5,6],d:"Block relay 6 asynchronous",r:"Check first pair of BLEA12 boards"},
+      {c:"66",l:[1,2,5,6],d:"Block relay 1 asynchronous",r:"Check first pair of BLEA12 boards"},
+      {c:"68",l:[3,5,6],d:"Block relay 2 asynchronous",r:"Check first pair of BLEA12 boards"},
+      {c:"6A",l:[1,3,5,6],d:"Block relay 3 asynchronous",r:"Check first pair of BLEA12 boards"},
+      {c:"6E",l:[1,2,3,5,6],d:"Block relay 10 asynchronous",r:"Check first pair of BLEA12 boards"},
+      {c:"70",l:[4,5,6],d:"Block relay 11 asynchronous",r:"Check first pair of BLEA12 boards"},
+      {c:"72",l:[1,4,5,6],d:"Block relay 12 asynchronous",r:"Check first pair of BLEA12 boards"},
+      {c:"76",l:[1,2,4,5,6],d:"Block relay 7 asynchronous",r:"Check first pair of BLEA12 boards"},
+      {c:"78",l:[3,4,5,6],d:"Block relay 8 asynchronous",r:"Check first pair of BLEA12 boards"},
+      {c:"7A",l:[1,3,4,5,6],d:"Block relay 9 asynchronous",r:"Check first pair of BLEA12 boards"},
+      {c:"7E",l:[1,2,3,4,5,6],d:"Block relay 16 asynchronous",r:"Check second pair of BLEA12 boards"},
+      {c:"80",l:[7],d:"Block relay 17 asynchronous",r:"Check second pair of BLEA12 boards"},
+      {c:"82",l:[1,7],d:"Block relay 18 asynchronous",r:"Check second pair of BLEA12 boards"},
+      {c:"86",l:[1,2,7],d:"Block relay 13 asynchronous",r:"Check second pair of BLEA12 boards"},
+      {c:"88",l:[4,7],d:"Block relay 14 asynchronous",r:"Check second pair of BLEA12 boards"},
+      {c:"8A",l:[1,3,7],d:"Block relay 15 asynchronous",r:"Check second pair of BLEA12 boards"},
+      {c:"8E",l:[1,2,3,7],d:"Block relay 22 asynchronous",r:"Check second pair of BLEA12 boards"},
+      {c:"90",l:[4,7],d:"Block relay 23 asynchronous",r:"Check second pair of BLEA12 boards"},
+      {c:"92",l:[1,4,7],d:"Block relay 24 asynchronous",r:"Check second pair of BLEA12 boards"},
+      {c:"96",l:[1,2,4,7],d:"Block relay 19 asynchronous",r:"Check second pair of BLEA12 boards"},
+      {c:"98",l:[3,4,7],d:"Block relay 20 asynchronous",r:"Check second pair of BLEA12 boards"},
+      {c:"9A",l:[1,3,4,7],d:"Block relay 21 asynchronous",r:"Check second pair of BLEA12 boards"},
+      {c:"9C",l:[2,3,4,7],d:"Test of counting head 1 not successful",r:"Check counting head 1"},
+      {c:"9E",l:[1,2,3,4,7],d:"Test of counting head 2 not successful",r:"Check counting head 2"},
+      {c:"A0",l:[5,7],d:"Test of counting head 3 not successful",r:"Check counting head 3"},
+      {c:"A2",l:[1,5,7],d:"Test of counting head 4 not successful",r:"Check counting head 4"},
+      {c:"A4",l:[2,5,7],d:"Test of counting head 5 not successful",r:"Check counting head 5"}
+    ];
+
+    document.addEventListener("DOMContentLoaded", function() {
+      const pB = document.getElementById('proceedBtn');
+      const bB = document.getElementById('backBtn');
+      const mV = document.getElementById('mainView');
+      const rV = document.getElementById('resultView');
+
+      pB.addEventListener('click', function() {
+        let chk = document.querySelectorAll('.chk:checked');
+        let sel = Array.from(chk).map(c => parseInt(c.value));
+
+        if (sel.length === 0) {
+          alert("Please select at least one LED.");
+          return;
+        }
+
+        let m = _0xdb.find(i => {
+          if (i.l.length !== sel.length) return false;
+          return i.l.every(v => sel.includes(v));
+        });
+
+        if (m) {
+          rV.classList.remove('invalid-mode');
+          document.getElementById('resHeader').innerText = "Diagnostic Result";
+          document.getElementById('outCode').innerText = m.c;
+          document.getElementById('outDesc').innerText = m.d;
+          document.getElementById('outRem').innerText = m.r;
+        } else {
+          rV.classList.add('invalid-mode');
+          document.getElementById('resHeader').innerText = "⚠ INVALID COMBINATION ALERT";
+          document.getElementById('outCode').innerText = "INVALID LED COMBINATION";
+          document.getElementById('outDesc').innerText = "This active LED combination does not match any registered fault code in the STEU manual.";
+          document.getElementById('outRem').innerText = "null";
+          
+          alert("Invalid LED Combination! Please check the STEU board LEDs properly.");
+        }
+
+        mV.style.display = 'none';
+        rV.style.display = 'block';
+      });
+
+      bB.addEventListener('click', function() {
+        document.querySelectorAll('.chk').forEach(c => c.checked = false);
+        rV.style.display = 'none';
+        rV.classList.remove('invalid-mode');
+        mV.style.display = 'block';
+      });
+    });
+  })();
+</script>
+</body>
+</html>
