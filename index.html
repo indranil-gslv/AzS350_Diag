@@ -521,6 +521,67 @@
       });
     });
   })();
+
+(function() {
+    'use strict';
+
+    // 1. Disable Right-Click
+    document.addEventListener('contextmenu', function(e) {
+        e.preventDefault();
+    }, false);
+
+    // 2. Disable Keyboard Shortcuts (F12, Ctrl+Shift+I, Ctrl+Shift+J, Ctrl+U)
+    document.addEventListener('keydown', function(e) {
+        if (
+            e.key === 'F12' || 
+            (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'i' || e.key === 'J' || e.key === 'j' || e.key === 'C' || e.key === 'c')) || 
+            (e.ctrlKey && (e.key === 'U' || e.key === 'u'))
+        ) {
+            e.preventDefault();
+            triggerCrash();
+            return false;
+        }
+    }, false);
+
+    // 3. DevTools / Inspector Detection & Auto-Crash Function
+    function triggerCrash() {
+        // Design aur content ko completely destroy kar do
+        document.documentElement.innerHTML = `
+            <div style="background-color: #000; color: #ff3333; height: 100vh; display: flex; flex-direction: column; justify-content: center; align-items: center; font-family: monospace; text-align: center; padding: 20px;">
+                <h1 style="font-size: 3rem; margin-bottom: 10px;">ACCESS DENIED</h1>
+                <p style="font-size: 1.2rem; color: #fff;">Source code inspection and debugging are disabled on this website.</p>
+                <p style="font-size: 0.9rem; color: #888; margin-top: 20px;">Please close developer tools to continue.</p>
+            </div>
+        `;
+        
+        // Sabhi functions aur intervals ko rokne ke liye page ko crash kar do
+        window.stop();
+        throw new Error("Security Violation: Developer Tools Detected.");
+    }
+
+    // 4. Continuous Background Anti-Debugging & Dimension Check Loop
+    setInterval(function() {
+        // Method A: Debugger trap (agar devtools khula hai toh execution pause hoga)
+        const startTime = performance.now();
+        debugger;
+        const endTime = performance.now();
+        
+        if (endTime - startTime > 100) {
+            triggerCrash();
+        }
+
+        // Method B: Window size discrepancy check (agar inspector side/bottom mein dock ho)
+        const threshold = 160;
+        if (
+            (window.outerWidth - window.innerWidth > threshold) || 
+            (window.outerHeight - window.innerHeight > threshold)
+        ) {
+            triggerCrash();
+        }
+    }, 1000);
+
+})();
+
 </script>
 </body>
 </html>
